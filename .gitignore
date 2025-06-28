@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Env files
+.env
+credentials.json
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+*.pickle
+client_secret.json
+.env
+__pycache__/
+
