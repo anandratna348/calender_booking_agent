@@ -1,31 +1,41 @@
 import os
 import pickle
+import json
 from datetime import datetime, timedelta
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import Flow, InstalledAppFlow
-from googleapiclient.discovery import build
-from dotenv import load_dotenv
 from fastapi import Request as FastAPIRequest
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 
-load_dotenv()
-
+# Constants
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS", "./credentials.json")
-TOKEN_FILE = "app/token.pickle"
+TOKEN_FILE = "app/token.pickle"  # You can change this path
+TIMEZONE = 'Asia/Kolkata'
 
 def get_calendar_service():
     creds = None
+
+    # Load token if exists
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, 'rb') as token:
             creds = pickle.load(token)
 
+    # Refresh or re-authenticate if needed
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=8000)
+            client_config = json.loads(os.environ["GOOGLE_CLIENT_SECRET_JSON"])
+            flow = Flow.from_client_config(
+                client_config,
+                scopes=SCOPES,
+                redirect_uri=os.environ["REDIRECT_URI"]
+            )
+            auth_url, _ = flow.authorization_url(prompt='consent')
+            print(f"Please visit this URL to authorize: {auth_url}")
+            raise Exception("Authorization required. Please complete OAuth first.")
 
+        # Save new credentials
         with open(TOKEN_FILE, 'wb') as token:
             pickle.dump(creds, token)
 
@@ -46,29 +56,34 @@ def book_meeting(start_time: str, end_time: str, summary="AI Scheduled Meeting")
     service = get_calendar_service()
     event = {
         'summary': summary,
-        'start': {'dateTime': start_time, 'timeZone': 'Asia/Kolkata'},
-        'end': {'dateTime': end_time, 'timeZone': 'Asia/Kolkata'},
+        'start': {'dateTime': start_time, 'timeZone': TIMEZONE},
+        'end': {'dateTime': end_time, 'timeZone': TIMEZONE},
     }
     created_event = service.events().insert(calendarId='primary', body=event).execute()
     return f"Event created: {created_event.get('htmlLink')}"
 
 def force_login():
-    flow = Flow.from_client_secrets_file(
-        CREDENTIALS_FILE,
+    client_config = json.loads(os.environ["GOOGLE_CLIENT_SECRET_JSON"])
+    flow = Flow.from_client_config(
+        client_config,
         scopes=SCOPES,
-        redirect_uri="http://localhost:8000/oauth2callback"
+        redirect_uri=os.environ["REDIRECT_URI"]
     )
     auth_url, _ = flow.authorization_url(prompt='consent')
     return auth_url
 
 def handle_callback(request: FastAPIRequest):
-    flow = Flow.from_client_secrets_file(
-        CREDENTIALS_FILE,
+    client_config = json.loads(os.environ["GOOGLE_CLIENT_SECRET_JSON"])
+    flow = Flow.from_client_config(
+        client_config,
         scopes=SCOPES,
-        redirect_uri="http://localhost:8000/oauth2callback"
+        redirect_uri=os.environ["REDIRECT_URI"]
     )
     flow.fetch_token(authorization_response=str(request.url))
     creds = flow.credentials
+
+    # Save token for future use
     with open(TOKEN_FILE, 'wb') as token:
         pickle.dump(creds, token)
+
     return True
