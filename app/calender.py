@@ -1,7 +1,7 @@
 import os
 import pickle
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from fastapi import Request as FastAPIRequest
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
@@ -9,8 +9,9 @@ from googleapiclient.discovery import build
 
 # Constants
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-TOKEN_FILE = "app/token.pickle"  # You can change this path
+TOKEN_FILE = "app/token.pickle"
 TIMEZONE = 'Asia/Kolkata'
+
 
 def get_calendar_service():
     creds = None
@@ -41,6 +42,7 @@ def get_calendar_service():
 
     return build('calendar', 'v3', credentials=creds)
 
+
 def check_availability(start_time: str, end_time: str) -> bool:
     service = get_calendar_service()
     events = service.events().list(
@@ -52,6 +54,7 @@ def check_availability(start_time: str, end_time: str) -> bool:
     ).execute().get('items', [])
     return len(events) == 0
 
+
 def book_meeting(start_time: str, end_time: str, summary="AI Scheduled Meeting"):
     service = get_calendar_service()
     event = {
@@ -60,7 +63,8 @@ def book_meeting(start_time: str, end_time: str, summary="AI Scheduled Meeting")
         'end': {'dateTime': end_time, 'timeZone': TIMEZONE},
     }
     created_event = service.events().insert(calendarId='primary', body=event).execute()
-    return f"Event created: {created_event.get('htmlLink')}"
+    return f"✅ Event created: {created_event.get('htmlLink')}"
+
 
 def force_login():
     client_config = json.loads(os.environ["GOOGLE_CLIENT_SECRET_JSON"])
@@ -71,6 +75,7 @@ def force_login():
     )
     auth_url, _ = flow.authorization_url(prompt='consent')
     return auth_url
+
 
 def handle_callback(request: FastAPIRequest):
     client_config = json.loads(os.environ["GOOGLE_CLIENT_SECRET_JSON"])
