@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 import webbrowser
 
+# Backend URL for deployed API
+BACKEND_API_URL = "https://calender-booking-agent-8ecg.onrender.com"
+
 st.set_page_config(page_title="Calendar Booking Assistant")
 st.title("Calendar Booking Assistant")
 
@@ -10,14 +13,18 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # -- Check Login Status --
-login_status = requests.get("http://localhost:8000/is_logged_in").json()
-logged_in = login_status.get("logged_in", False)
+try:
+    login_status = requests.get(f"{BACKEND_API_URL}/is_logged_in").json()
+    logged_in = login_status.get("logged_in", False)
+except Exception as e:
+    st.error("Unable to connect to backend.")
+    st.stop()
 
 # -- Login Prompt or Confirmation --
 if not logged_in:
-    st.markdown("### 🔐 Authorization Required")
+    st.markdown("### Authorization Required")
     if st.button("Login with Google Calendar", key="login_button"):
-        webbrowser.open_new_tab("http://localhost:8000/authorize")
+        webbrowser.open_new_tab(f"{BACKEND_API_URL}/authorize")
         st.info("Login window opened. Complete Google authorization.")
 else:
     st.success("You are logged in with Google Calendar!")
@@ -29,7 +36,7 @@ user_input = st.chat_input("Ask me to book something...", key="chat_box")
 
 if user_input:
     try:
-        res = requests.post("http://localhost:8000/chat", json={"message": user_input})
+        res = requests.post(f"{BACKEND_API_URL}/chat", json={"message": user_input})
         response = res.json()["response"]
     except Exception as e:
         response = f"Error: {e}"
