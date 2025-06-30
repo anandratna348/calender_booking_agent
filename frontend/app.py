@@ -16,12 +16,14 @@ try:
     login_status = requests.get(f"{BACKEND_API_URL}/is_logged_in").json()
     logged_in = login_status.get("logged_in", False)
 except Exception as e:
-    st.error("Unable to connect to backend.")
+    st.error("❌ Unable to connect to backend.")
     st.stop()
 
-# -- Login Prompt or Confirmation --
+# -- Login / Logout Logic --
 if not logged_in:
     st.markdown("### 🔐 Authorization Required")
+
+    # Login button with styled HTML link
     login_url = f"{BACKEND_API_URL}/authorize"
     st.markdown(
         f"""
@@ -31,21 +33,34 @@ if not logged_in:
         """,
         unsafe_allow_html=True
     )
+
+    # Manual check after user logs in on new tab
+    if st.button("✅ I have logged in"):
+        try:
+            login_status = requests.get(f"{BACKEND_API_URL}/is_logged_in").json()
+            logged_in = login_status.get("logged_in", False)
+            if logged_in:
+                st.success("🎉 Logged in successfully!")
+                st.experimental_rerun()
+            else:
+                st.warning("⚠️ Still not logged in. Complete login in the opened tab.")
+        except:
+            st.error("❌ Could not verify login status.")
 else:
     st.success("✅ You are logged in with Google Calendar!")
-    # After login confirmation
+
+    # Logout button
     if st.button("Logout"):
         try:
             response = requests.get(f"{BACKEND_API_URL}/logout")
             if response.ok:
-                st.success("Logged out successfully. Please refresh.")
-                st.session_state.chat_history = []  # Clear chat if needed
-                st.stop()
+                st.success("🔓 Logged out successfully.")
+                st.session_state.chat_history = []
+                st.experimental_rerun()
             else:
-                st.error("Logout failed.")
+                st.error("❌ Logout failed.")
         except Exception as e:
             st.error(f"Error during logout: {e}")
-
 
 st.markdown("---")
 
