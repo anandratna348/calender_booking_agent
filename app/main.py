@@ -36,8 +36,15 @@ async def authorize():
 async def oauth2callback(request: Request):
     success = handle_callback(request)
     if success:
-        return HTMLResponse("<h2>Google Calendar Login Successful!</h2><p>You can now return to the chat.</p>")
-    return HTMLResponse("<h2>Login Failed</h2>", status_code=400)
+        return HTMLResponse("""
+        <script>
+            window.opener.postMessage("auth-success", "*");
+            window.close();
+        </script>
+        <p>✅ Login successful. You can close this window.</p>
+        """)
+    return HTMLResponse("<h2>❌ Login Failed</h2>", status_code=400)
+
 
 @app.get("/logout")
 def logout():
