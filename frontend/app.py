@@ -52,7 +52,8 @@ else:
             if res.ok:
                 st.success("Logout successful. Refreshing...")
                 st.session_state.chat_history = []
-                st.experimental_rerun()
+                st.rerun()
+
             else:
                 st.error("Logout failed.")
         except Exception as e:
