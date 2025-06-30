@@ -38,3 +38,10 @@ async def oauth2callback(request: Request):
     if success:
         return HTMLResponse("<h2>Google Calendar Login Successful!</h2><p>You can now return to the chat.</p>")
     return HTMLResponse("<h2>Login Failed</h2>", status_code=400)
+
+@app.get("/logout")
+def logout():
+    token_path = "app/token.pickle"
+    if os.path.exists(token_path):
+        os.remove(token_path)
+    return {"success": True, "message": "User logged out"}

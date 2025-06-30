@@ -33,6 +33,19 @@ if not logged_in:
     )
 else:
     st.success("✅ You are logged in with Google Calendar!")
+    # After login confirmation
+    if st.button("Logout"):
+        try:
+            response = requests.get(f"{BACKEND_API_URL}/logout")
+            if response.ok:
+                st.success("Logged out successfully. Please refresh.")
+                st.session_state.chat_history = []  # Clear chat if needed
+                st.stop()
+            else:
+                st.error("Logout failed.")
+        except Exception as e:
+            st.error(f"Error during logout: {e}")
+
 
 st.markdown("---")
 
