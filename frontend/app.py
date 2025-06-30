@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import webbrowser
 
 # Backend URL for deployed API
 BACKEND_API_URL = "https://calender-booking-agent-8ecg.onrender.com"
@@ -22,12 +21,18 @@ except Exception as e:
 
 # -- Login Prompt or Confirmation --
 if not logged_in:
-    st.markdown("### Authorization Required")
-    if st.button("Login with Google Calendar", key="login_button"):
-        webbrowser.open_new_tab(f"{BACKEND_API_URL}/authorize")
-        st.info("Login window opened. Complete Google authorization.")
+    st.markdown("### 🔐 Authorization Required")
+    login_url = f"{BACKEND_API_URL}/authorize"
+    st.markdown(
+        f"""
+        <a href="{login_url}" target="_blank">
+            <button style="padding:10px 20px; font-size:16px;">Login with Google Calendar</button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
 else:
-    st.success("You are logged in with Google Calendar!")
+    st.success("✅ You are logged in with Google Calendar!")
 
 st.markdown("---")
 
